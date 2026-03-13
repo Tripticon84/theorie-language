@@ -12,7 +12,7 @@ from genereTreeGraphviz2 import printTreeGraph
 # Config
 # =============================================================================
 
-DEBUG = True
+DEBUG = False
 
 # =============================================================================
 # Lexeur — Tokens
@@ -26,7 +26,6 @@ reserved = {
     "while":    "WHILE",
     "function": "FUNC",
     "return":   "RETURN",
-    "main":     "MAIN",
 }
 
 tokens = [
@@ -120,13 +119,22 @@ precedence = (
 # --- Programme et fonctions ---
 
 def p_prog(p):
-    """prog : main
-            | func prog
-            """
+    """prog : prog_item prog
+            | prog_item"""
     if len(p) == 2:
-        p[0] = ("prog", p[1])
+        p[0] = p[1]
     else:
-        p[0] = ("prog", p[1], p[2])
+        p[0] = ("bloc", p[1], p[2])
+
+
+def p_prog_item(p):
+    """prog_item : func
+                 | func SEMI
+                 | statement SEMI"""
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = p[1]
 
 
 def p_func(p):
@@ -137,9 +145,6 @@ def p_func(p):
     elif len(p) == 10:
         p[0] = ("func", p[2], p[6], "return")
 
-def p_main(p):
-    "main : MAIN LPAREN RPAREN LACC bloc RACC"
-    p[0] = ("main", p[5])
 
 def p_bloc(p):
     """bloc : bloc statement SEMI
@@ -281,20 +286,29 @@ def evalExpr(expression):
         op = expression[0]
         gauche = evalExpr(expression[1])
         droite = evalExpr(expression[2])
-        operations = {
-            "+":  gauche + droite,
-            "-":  gauche - droite,
-            "*":  gauche * droite,
-            "/":  gauche / droite,
-            "%":  gauche % droite,
-            "<":  gauche < droite,
-            "<=": gauche <= droite,
-            ">":  gauche > droite,
-            "==": gauche == droite,
-            "&&": gauche and droite,
-            "||": gauche or droite,
-        }
-        return operations.get(op)
+
+        if op == "+":
+            return gauche + droite
+        elif op == "-":
+            return gauche - droite
+        elif op == "*":
+            return gauche * droite
+        elif op == "/":
+            return gauche / droite
+        elif op == "%":
+            return gauche % droite
+        elif op == "<":
+            return gauche < droite
+        elif op == "<=":
+            return gauche <= droite
+        elif op == ">":
+            return gauche > droite
+        elif op == "==":
+            return gauche == droite
+        elif op == "&&":
+            return gauche and droite
+        elif op == "||":
+            return gauche or droite
 
 
 # Évalue une instruction (nœud de l'AST).
@@ -304,21 +318,7 @@ def evalInst(t):
 
     noeud = t[0]
 
-    if noeud == "prog":
-        if len(t) == 2:
-            evalInst(t[1])
-        elif len(t) == 3:
-            evalInst(t[1])
-            evalInst(t[2])
-        else:
-            evalInst(t[1])
-            evalInst(t[2])
-            evalInst(t[3])
-
-    elif noeud == "main":
-        evalInst(t[1])
-
-    elif noeud == "bloc":
+    if noeud == "bloc":
         evalInst(t[1])
         evalInst(t[2])
 
@@ -333,7 +333,7 @@ def evalInst(t):
         if DEBUG:
             print("calc >", result)
         else:
-            print(result)
+            print("calc >", result)
 
     elif noeud == "if":
         if DEBUG:
@@ -393,23 +393,15 @@ yacc.yacc()
 # };
 # '''
 s = '''
-function carre() {
-    print(2);
-    return;
-}
-function aa() {
-    print(4);
-    return;
-}
-main() {
-    aeaz=carre();
-    aeaz;
-}
-'''
-# s = 'for (i=0; i<10; i=i+1) { print(i); };'
 
-# s = "uiui21=1+2*3; print(uiui21+uiui21);"
-# s = "main() { print(1); }"
+    for (i=0; i<10; i=i+1) {
+        if (i%2 == 0) {
+            print(i);
+        };
+    };
+
+'''
+
 
 prog = yacc.parse(s)
 printTreeGraph(prog)
