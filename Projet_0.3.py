@@ -12,7 +12,7 @@ from genereTreeGraphviz2 import printTreeGraph
 # Config
 # =============================================================================
 
-DEBUG = False
+DEBUG = True
 
 # =============================================================================
 # Lexeur — Tokens
@@ -48,6 +48,7 @@ tokens = [
     "SUP",
     "AND",
     "OR",
+    "COMMA"
 ] + list(reserved.values())
 
 
@@ -105,6 +106,8 @@ def t_error(t):
 # Tables de symboles
 names     = {}  # Variables globales
 fonctions = {}  # Fonctions définies
+scope_stack = [names]  # Pile de scopes (global + locaux)
+return_value = None
 
 # Priorités des opérateurs (du moins prioritaire au plus prioritaire)
 precedence = (
@@ -138,12 +141,12 @@ def p_prog_item(p):
 
 
 def p_func(p):
-    """func : FUNC NAME LPAREN RPAREN LACC bloc RACC
-            | FUNC NAME LPAREN RPAREN LACC bloc RETURN SEMI RACC"""
-    if len(p) == 8:
-        p[0] = ("func", p[2], p[6])
-    elif len(p) == 10:
-        p[0] = ("func", p[2], p[6], "return")
+    """func : FUNC NAME LPAREN params RPAREN LACC bloc RACC
+            | FUNC NAME LPAREN params RPAREN LACC bloc RETURN expression SEMI RACC"""
+    if len(p) == 9:
+        p[0] = ("func", p[2], p[4], p[7], None)
+    else:
+        p[0] = ("func", p[2], p[4], p[7], p[9])
 
 
 def p_bloc(p):
@@ -155,6 +158,22 @@ def p_bloc(p):
     else:
         p[0] = ("bloc", "empty", p[1])
 
+def p_params(p):
+    """params : NAME
+              | NAME COMMA params
+              | empty"""
+    if len(p) == 2:
+        if p[1] == "empty":
+            p[0] = []
+        else:
+            p[0] = [p[1]]
+    else:
+        p[0] = [p[1]] + p[3]
+
+def p_empty(p):
+    "empty :"
+    p[0] = "empty"
+
 
 # --- Instructions ---
 
@@ -163,10 +182,22 @@ def p_statement_assign(p):
     p[0] = ("assign", p[1], p[3])
 
 
-def p_statement_call(p):
-    "statement : NAME LPAREN RPAREN"
-    p[0] = ("call", p[1])
+def p_args(p):
+    """args : expression
+            | expression COMMA args
+            | empty"""
+    if len(p) == 2:
+        if p[1] == "empty":
+            p[0] = []
+        else:
+            p[0] = [p[1]]
+    else:
+        p[0] = [p[1]] + p[3]
 
+
+def p_statement_return(p):
+    "statement : RETURN expression"
+    p[0] = ("return", p[2])
 
 def p_statement_print(p):
     "statement : PRINT LPAREN expression RPAREN"
@@ -194,6 +225,10 @@ def p_statement_for(p):
 
 
 # --- Expressions ---
+
+def p_expression_call(p):
+    "expression : NAME LPAREN args RPAREN"
+    p[0] = ("call", p[1], p[3])
 
 def p_expression_binop_plus(p):
     "expression : expression PLUS expression"
@@ -281,9 +316,16 @@ def evalExpr(expression):
     if isinstance(expression, (int, float)):
         return expression
     if isinstance(expression, str):
-        return names[expression]
+        # Chercher la variable dans la pile de scopes (du plus local au plus global)
+        for scope in reversed(scope_stack):
+            if expression in scope:
+                return scope[expression]
+        raise NameError(f"Variable non définie : {expression}")
     if isinstance(expression, tuple):
         op = expression[0]
+        if op == "call":
+            return evalCall(expression[1], expression[2])
+
         gauche = evalExpr(expression[1])
         droite = evalExpr(expression[2])
 
@@ -313,6 +355,9 @@ def evalExpr(expression):
 
 # Évalue une instruction (nœud de l'AST).
 def evalInst(t):
+
+    global return_value
+
     if t == "empty":
         return
 
@@ -320,20 +365,19 @@ def evalInst(t):
 
     if noeud == "bloc":
         evalInst(t[1])
-        evalInst(t[2])
+        if return_value is None:
+            evalInst(t[2])
 
     elif noeud == "assign":
         valeur = evalExpr(t[2])
+        scope_stack[-1][t[1]] = valeur
         if DEBUG:
-            print(f"calc > la variable {t[1]} = {valeur}")
-        names[t[1]] = valeur
+            print(f"la variable {t[1]} = {valeur}")
 
     elif noeud == "print":
         result = evalExpr(t[1])
-        if DEBUG:
-            print("calc >", result)
-        else:
-            print("calc >", result)
+        print("calc >", result)
+
 
     elif noeud == "if":
         if DEBUG:
@@ -366,14 +410,52 @@ def evalInst(t):
     elif noeud == "func":
         if DEBUG:
             print(f"Définition de la fonction '{t[1]}'")
-        fonctions[t[1]] = t[2]
+        fonctions[t[1]] = (t[2], t[3], t[4])
 
     elif noeud == "call":
         nom = t[1]
         if nom not in fonctions:
             print(f"Fonction inconnue : {nom}")
             return
-        evalInst(fonctions[nom])
+        evalCall(t[1], t[2])
+
+    elif noeud == "return":
+        return_value = evalExpr(t[1])
+        if DEBUG:
+            print(f"Retour de la fonction : {return_value}")
+
+def evalCall(nom, args):
+    global return_value
+
+    func_data = fonctions[nom]
+    params = func_data[0]
+    corps = func_data[1]
+    return_expr = func_data[2]
+
+    # Créer un nouveau scope local
+    local_scope = {}
+
+    for param, arg in zip(params, args):
+        local_scope[param] = evalExpr(arg)
+
+    # Ajouter le scope local à la pile
+    scope_stack.append(local_scope)
+    old_return = return_value
+    return_value = None
+
+    try:
+        evalInst(corps)
+        if return_value is not None:
+            result = return_value
+        elif return_expr:
+            result = evalExpr(return_expr)
+        else:
+            result = None
+    finally:
+        scope_stack.pop()  # Retirer le scope local
+        return_value = old_return
+
+    return result
 
 
 # =============================================================================
@@ -393,13 +475,11 @@ yacc.yacc()
 # };
 # '''
 s = '''
-
-    for (i=0; i<10; i=i+1) {
-        if (i%2 == 0) {
-            print(i);
-        };
-    };
-
+function carre(x) {
+    return x * x;
+};
+ae = carre(5);
+print(ae);
 '''
 
 
