@@ -4,3 +4,4 @@ Digraph.gv.pdf
 parser.out
 parsetab.py
 ___pycache___
+*.pyc
