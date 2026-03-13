@@ -324,48 +324,38 @@ def evalInst(t):
 
     elif noeud == "assign":
         valeur = evalExpr(t[2])
-        if DEBUG:
-            print(f"calc > la variable {t[1]} = {valeur}")
+        print(f"calc > la variable {t[1]} = {valeur}")
         names[t[1]] = valeur
 
     elif noeud == "print":
-        result = evalExpr(t[1])
-        if DEBUG:
-            print("calc >", result)
-        else:
-            print(result)
+        print("calc >", evalExpr(t[1]))
 
     elif noeud == "if":
-        if DEBUG:
-            print(f"si {t[1]}\n    alors {t[2]}")
+        print(f"si {t[1]}\n    alors {t[2]}")
         if evalExpr(t[1]):
             evalInst(t[2])
 
     elif noeud == "if-else":
-        if DEBUG:
-            print(f"si {t[1]}\n    alors {t[2]}\n    sinon {t[3]}")
+        print(f"si {t[1]}\n    alors {t[2]}\n    sinon {t[3]}")
         if evalExpr(t[1]):
             evalInst(t[2])
         else:
             evalInst(t[3])
 
     elif noeud == "while":
-        if DEBUG:
-            print(f"tant que {t[1]}\n    faire {t[2]}")
+        print(f"tant que {t[1]}\n    faire {t[2]}")
         while evalExpr(t[1]):
             evalInst(t[2])
 
     elif noeud == "for":
-        if DEBUG:
-            print(f"pour {t[1]}\n    tant que {t[2]}\n    incrémenter {t[3]}")
+        print(f"pour {t[1]}\n    tant que {t[2]}\n    incrémenter {t[3]}")
         evalInst(t[1])          # initialisation
         while evalExpr(t[2]):   # condition
             evalInst(t[4])      # corps
             evalInst(t[3])      # incrémentation
 
     elif noeud == "func":
-        if DEBUG:
-            print(f"Définition de la fonction '{t[1]}'")
+        print(f"Définition de la fonction '{t[1]}'")
         fonctions[t[1]] = t[2]
 
     elif noeud == "call":
@@ -402,8 +392,7 @@ function aa() {
     return;
 }
 main() {
-    aeaz=carre();
-    print(aeaz);
+carre();
 }
 '''
 # s = 'for (i=0; i<10; i=i+1) { print(i); };'
