@@ -271,8 +271,8 @@ def p_error(p):
 # Interpréteur — Évaluation
 # =============================================================================
 
+# Évalue une expression et retourne sa valeur.
 def evalExpr(expression):
-    """Évalue une expression et retourne sa valeur."""
     if isinstance(expression, (int, float)):
         return expression
     if isinstance(expression, str):
@@ -297,8 +297,8 @@ def evalExpr(expression):
         return operations.get(op)
 
 
+# Évalue une instruction (nœud de l'AST).
 def evalInst(t):
-    """Évalue une instruction (nœud de l'AST)."""
     if t == "empty":
         return
 
@@ -403,7 +403,7 @@ function aa() {
 }
 main() {
     aeaz=carre();
-    print(aeaz);
+    aeaz;
 }
 '''
 # s = 'for (i=0; i<10; i=i+1) { print(i); };'
