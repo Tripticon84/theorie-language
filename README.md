@@ -51,7 +51,7 @@
 
 - [ ] `print` multiples (`print(x, "toto")`).
 
-- [ ] **Raccourcis** : Incrémentation `x++` et affectation élargie `x += 1`.
+- [x] **Raccourcis** : Incrémentation `x++` et affectation élargie `x += 1`.
 
 - [ ] **Documentation** : Commentaires dans le code et génération de docString.
 
@@ -64,7 +64,7 @@
 - [ ] **README final** : Doit lister les fonctionnalités implémentées et les exemples d'inputs associés.
 
 - [ ] **Sortie Console** :
-- [ ] Exécution non verbeuse (pas de traces de fonctions d'évaluation).
+- [x] Exécution non verbeuse (pas de traces de fonctions d'évaluation).
 
 - [x] Affichages préfixés par `calc >`.
 

@@ -43,7 +43,13 @@ tokens = [
     "SUP",
     "AND",
     "OR",
-    "COMMA"
+    "COMMA",
+    "PLUSPLUS",
+    "MINUSMINUS",
+    "PLUSEQUAL",
+    "MINUSEQUAL",
+    "TIMESEQUAL",
+    "MODEQUAL",
 ] + list(reserved.values())
 
 
@@ -66,6 +72,13 @@ t_INF      = r"\<"
 t_SUP      = r"\>"
 t_AND      = r"\&\&"
 t_OR       = r"\|\|"
+t_COMMA    = r"\,"
+t_PLUSPLUS = r"\+\+"
+t_MINUSMINUS = r"\-\-"
+t_PLUSEQUAL = r"\+="
+t_MINUSEQUAL = r"\-="
+t_TIMESEQUAL = r"\*="
+t_MODEQUAL = r"\%="
 
 t_ignore   = " \t"
 
@@ -100,6 +113,7 @@ return_value = None
 
 # Priorités des opérateurs (du moins au plus prioritaire)
 precedence = (
+    ("right",    "PLUSEQUAL", "MINUSEQUAL", "TIMESEQUAL", "MODEQUAL"),
     ("left",     "OR"),
     ("left",     "AND"),
     ("nonassoc", "INF", "INFEG", "EGALEGAL", "SUP"),
@@ -130,13 +144,8 @@ def p_prog_item(p):
 
 
 def p_func(p):
-    """func : FUNC NAME LPAREN params RPAREN LACC bloc RACC
-            | FUNC NAME LPAREN params RPAREN LACC bloc RETURN expression SEMI RACC"""
-    if len(p) == 9:
-        p[0] = ("func", p[2], p[4], p[7], None)
-    else:
-        p[0] = ("func", p[2], p[4], p[7], p[9])
-
+    """func : FUNC NAME LPAREN params RPAREN LACC bloc RACC"""
+    p[0] = ("func", p[2], p[4], p[7], None)
 
 def p_bloc(p):
     """bloc : bloc statement SEMI
@@ -170,6 +179,37 @@ def p_statement_assign(p):
     "statement : NAME EGAL expression"
     p[0] = ("assign", p[1], p[3])
 
+def p_statement_plusequal(p):
+    "statement : NAME PLUSEQUAL expression"
+    p[0] = ("assign", p[1], ("+", p[1], p[3]))
+
+def p_statement_minusequal(p):
+    "statement : NAME MINUSEQUAL expression"
+    p[0] = ("assign", p[1], ("-", p[1], p[3]))
+
+def p_statement_timesequal(p):
+    "statement : NAME TIMESEQUAL expression"
+    p[0] = ("assign", p[1], ("*", p[1], p[3]))
+
+def p_statement_modequal(p):
+    "statement : NAME MODEQUAL expression"
+    p[0] = ("assign", p[1], ("%", p[1], p[3]))
+
+def p_statement_plusplus(p):
+    """statement : NAME PLUSPLUS
+                 | PLUSPLUS NAME"""
+    if p[1] == '++':
+        p[0] = ("assign", p[2], ("+", p[2], 1))
+    else:
+        p[0] = ("assign", p[1], ("+", p[1], 1))
+
+def p_statement_minusminus(p):
+    """statement : NAME MINUSMINUS
+                 | MINUSMINUS NAME"""
+    if p[1] == '--':
+        p[0] = ("assign", p[2], ("-", p[2], 1))
+    else:
+        p[0] = ("assign", p[1], ("-", p[1], 1))
 
 def p_args(p):
     """args : expression
@@ -431,23 +471,98 @@ def evalCall(nom, args):
 lex.lex()
 yacc.yacc()
 
-# Exemples de test
+# Tests
 
-# Test 1 : Simple
+# Test 1 : Variables, affectations et expressions
+# s = '''
+# var1 = 42;
+# var2 = 8;
+# print(var1 + var2);
+
+# a = 5;
+# b = 3;
+# print(a * b + 2);
+# print((a + b) * 2);
+# '''
+
+# Test 2 : Opérateurs arithmétiques et comparaisons
+# s = '''
+# print(5 + 3);
+# print(10 - 2);
+# print(4 * 6);
+# print(15 / 3);
+# print(17 % 5);
+# print(5 == 5);
+# '''
+
+# Test 2b : Opérateurs logiques
+# s = '''
+# print(1 && 1);
+# print(1 && 0);
+# print(0 && 1);
+# print(0 && 0);
+# print(0 || 0);
+# print(1 || 0);
+# print(0 || 1);
+# print(1 || 1);
+# print(5 < 10);
+# print(5 <= 5);
+# print(10 > 3);
+# '''
+
+# Test 2c : Opérateurs d'affectation (+=, -=, *=, %=)
 # s = '''
 # x = 10;
-# y = 20;
-# print(x + y);
+# print(x);
+# x += 5;
+# print(x);
+# x -= 3;
+# print(x);
+# x *= 2;
+# print(x);
+# x %= 7;
+# print(x);
 # '''
 
-# Test 2 : Fonction avec paramètres
+
+# Test 3 : Conditionnelles (si-alors et si-alors-sinon)
+# s = '''
+# x = 15;
+# if (x > 10) {
+#     print(1);
+# };
+# y = 5;
+# if (y > 10) {
+#     print(100);
+# } else {
+#     print(200);
+# };
+# '''
+
+# Test 4 : Boucles (while et for)
+# s = '''
+# i = 0;
+# while (i < 3) {
+#     print(i);
+#     i = i + 1;
+# };
+# for (j = 0; j < 5; j = j + 1) {
+#     print(j);
+# };
+# '''
+
+# Test 5 : Fonctions (définition, appel, paramètres, retour)
 # s = '''
 # function carre(x) { return x * x; };
+# function add(a, b) { return a + b; };
+# function saluer() { print(42); };
 # res = carre(7);
 # print(res);
+# print(add(3, 4));
+# saluer();
 # '''
 
-# Test 3 : Fonction récursive (factorielle)
+# Test 6 : Récursivité (factorielle)
 # s = '''
 # function fact(n) {
 #     if (n <= 1) {
@@ -459,7 +574,52 @@ yacc.yacc()
 # print(fact(10));
 # '''
 
-# Test 4 : Tableaux
+# Test 7a : Portée des variables (globales et locales)
+# s = '''
+# x = 100;
+# function test(y) {
+#     z = x + y;
+#     return z;
+# };
+# function getter() {
+#     return x;
+# };
+# print(test(5));
+# print(getter());
+# x = 20;
+# print(getter());
+# '''
+
+# Test7b : Portée des variables (variable dans fonction)
+# Erreur attendue : "Variable non définie : z"
+# s = '''
+# x = 100;
+# function test(y) {
+#     z = x + y;
+#     return z;
+# };
+# test(5);
+# print(z);
+# '''
+
+# Test 8 : Raccourcis opérateurs (++, --, +=, -=, *=, %=)
+# s = '''
+# x = 10;
+# print(x);
+# x = x + 5;
+# print(x);
+# x = x - 3;
+# print(x);
+# x = x * 2;
+# print(x);
+# x = 17;
+# x = x % 5;
+# print(x);
+# '''
+
+# ====== TESTS : Fonctionnalités À Implémenter ======
+
+# Test 9 (À implémenter) : Tableaux
 # s = '''
 # tab = [10, 20, 30, 40, 50];
 # print(tab[0]);
@@ -468,36 +628,23 @@ yacc.yacc()
 # print(tab[2]);
 # '''
 
-# Test 5 : Scope des variables
-# s = '''
-# x = 10;
-# function test(y) {
-#     z = x + y;
-#     return z;
-# };
-# print(test(5));
-# print(z);
-# '''
-
-# Test 5 : POO (Classes et Objets)
+# Test 10 (À implémenter) : POO - Classes et Objets
 # s = '''
 # class Point {
 #     function constructor(x, y) {
 #         this.x = x;
 #         this.y = y;
 #     }
-#
 #     function afficher() {
 #         print(this.x);
 #         print(this.y);
 #     }
 # }
-#
 # p = new Point(3, 4);
 # p.afficher();
 # '''
 
-# Test 6 : Passage par référence
+# Test 11 (À implémenter) : Passage par référence
 # s = '''
 # function modifier(arr) {
 #     arr[0] = 999;
@@ -507,6 +654,54 @@ yacc.yacc()
 # modifier(tab);
 # print(tab[0]);
 # '''
+
+# Test 12 (À implémenter) : Gestion des erreurs
+# s = '''
+# print(undefined_var);
+# '''
+
+# Test 13 (À implémenter) : Déclaration explicite des variables
+# s = '''
+# int x = 10;
+# string s = "hello";
+# print(x);
+# print(s);
+# '''
+
+# Test 14 (À implémenter) : Types - Chaînes de caractères
+# s = '''
+# message = "Hello";
+# nom = "World";
+# print(message + " " + nom);
+# '''
+
+# Test 15 (À implémenter) : Python-like - Affectations multiples
+# s = '''
+# a, b = 2, 3;
+# print(a);
+# print(b);
+# '''
+
+# Test 16 (À implémenter) : Python-like - Comparaisons multiples
+# s = '''
+# if (1 < 2 < 3) {
+#     print(1);
+# };
+# '''
+
+# Test 17 (À implémenter) : Python-like - Print multiples
+# s = '''
+# print(5, "toto", 10);
+# '''
+
+# Test 18 (À implémenter) : Documentation - Commentaires
+# s = '''
+# # Ceci est un commentaire
+# x = 10;  # Affectation
+# print(x);
+# '''
+
+
 
 
 prog = yacc.parse(s)
