@@ -2,31 +2,31 @@
 
 ## 🚀 Version Minimale (Obligatoire - 8/20)
 
-- [X] **Analyseur syntaxique & AST** : Construire impérativement un arbre de syntaxe abstrait lors de l'analyse.
+- [x] **Analyseur syntaxique & AST** : Construire impérativement un arbre de syntaxe abstrait lors de l'analyse.
 
-- [X] **Variables** : Gérer les noms de variables à plusieurs caractères.
+- [x] **Variables** : Gérer les noms de variables à plusieurs caractères.
 
-- [X] **Instructions de base** :
-- [X] Affectation simple.
+- [x] **Instructions de base** :
+- [x] Affectation simple.
 
-- [X] Affichage d'expressions numériques (avec variables).
+- [x] Affichage d'expressions numériques (avec variables).
 
-- [X] **Structures de contrôle** :
-- [X] Conditionnelles : `si-alors` / `si-alors-sinon`.
+- [x] **Structures de contrôle** :
+- [x] Conditionnelles : `si-alors` / `si-alors-sinon`.
 
-- [X] Itératives : `while` et `for`.
+- [x] Itératives : `while` et `for`.
 
-- [X] **Visualisation** : Affichage de l'AST sur la console (format tuple) ou via GraphViz.
+- [x] **Visualisation** : Affichage de l'AST sur la console (format tuple) ou via GraphViz.
 
 ---
 
 ## ⭐ Améliorations Majeures
 
-- [ ] **Fonctions** : Gestion des fonctions avec/sans paramètres et avec/sans retour.
+- [x] **Fonctions** : Gestion des fonctions avec/sans paramètres et avec/sans retour.
 
-- [ ] **Portée (Scope)** : Gérer la portée des variables (locales vs globales).
+- [x] **Portée (Scope)** : Gérer la portée des variables (locales vs globales).
 
-- [ ] **Récursivité** : Gérer les fonctions récursives terminales.
+- [x] **Récursivité** : Gérer les fonctions récursives terminales.
 
 - [ ] **Tableaux** : Implémentation des structures de données de type tableau.
 
@@ -66,7 +66,7 @@
 - [ ] **Sortie Console** :
 - [ ] Exécution non verbeuse (pas de traces de fonctions d'évaluation).
 
-- [ ] Affichages préfixés par `calc >`.
+- [x] Affichages préfixés par `calc >`.
 
 - [ ] Arbre de l'input affiché sous forme de tuple.
 
