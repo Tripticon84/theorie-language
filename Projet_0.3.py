@@ -1,22 +1,17 @@
 # -*- coding: utf-8 -*-
 
-# =============================================================================
 # Imports
-# =============================================================================
 
 import ply.lex as lex
 import ply.yacc as yacc
 from genereTreeGraphviz2 import printTreeGraph
 
-# =============================================================================
 # Config
-# =============================================================================
 
 DEBUG = True
+DISPLAY_TREE = False
 
-# =============================================================================
 # Lexeur — Tokens
-# =============================================================================
 
 reserved = {
     "print":    "PRINT",
@@ -52,7 +47,7 @@ tokens = [
 ] + list(reserved.values())
 
 
-# --- Règles simples (les règles multi-caractères d'abord pour éviter les conflits) ---
+# Règles tokens
 
 t_INFEG    = r"\<\="
 t_EGALEGAL = r"\=\="
@@ -75,33 +70,27 @@ t_OR       = r"\|\|"
 t_ignore   = " \t"
 
 
-# --- Règles complexes ---
+# Règles
 
 def t_NAME(t):
     r"[a-zA-Z_][a-zA-Z_0-9]*"
     t.type = reserved.get(t.value, "NAME")  # Mots réservés
     return t
 
-
 def t_NUMBER(t):
     r"\d+"
     t.value = int(t.value)
     return t
 
-
 def t_newline(t):
     r"\n+"
     t.lexer.lineno += t.value.count("\n")
-
 
 def t_error(t):
     print(f"Caractère illégal : '{t.value[0]}'")
     t.lexer.skip(1)
 
-
-# =============================================================================
 # Parseur — Grammaire
-# =============================================================================
 
 # Tables de symboles
 names     = {}  # Variables globales
@@ -109,7 +98,7 @@ fonctions = {}  # Fonctions définies
 scope_stack = [names]  # Pile de scopes (global + locaux)
 return_value = None
 
-# Priorités des opérateurs (du moins prioritaire au plus prioritaire)
+# Priorités des opérateurs (du moins au plus prioritaire)
 precedence = (
     ("left",     "OR"),
     ("left",     "AND"),
@@ -119,7 +108,7 @@ precedence = (
 )
 
 
-# --- Programme et fonctions ---
+# Main
 
 def p_prog(p):
     """prog : prog_item prog
@@ -175,7 +164,7 @@ def p_empty(p):
     p[0] = "empty"
 
 
-# --- Instructions ---
+# Instructions
 
 def p_statement_assign(p):
     "statement : NAME EGAL expression"
@@ -203,28 +192,24 @@ def p_statement_print(p):
     "statement : PRINT LPAREN expression RPAREN"
     p[0] = ("print", p[3])
 
-
 def p_statement_if(p):
     "statement : IF LPAREN expression RPAREN LACC bloc RACC"
     p[0] = ("if", p[3], p[6])
-
 
 def p_statement_if_else(p):
     "statement : IF LPAREN expression RPAREN LACC bloc RACC ELSE LACC bloc RACC"
     p[0] = ("if-else", p[3], p[6], p[10])
 
-
 def p_statement_while(p):
     "statement : WHILE LPAREN expression RPAREN LACC bloc RACC"
     p[0] = ("while", p[3], p[6])
-
 
 def p_statement_for(p):
     "statement : FOR LPAREN NAME EGAL expression SEMI expression SEMI NAME EGAL expression RPAREN LACC bloc RACC"
     p[0] = ("for", ("assign", p[3], p[5]), p[7], ("assign", p[9], p[11]), p[14])
 
 
-# --- Expressions ---
+# Expressions
 
 def p_expression_call(p):
     "expression : NAME LPAREN args RPAREN"
@@ -234,71 +219,57 @@ def p_expression_binop_plus(p):
     "expression : expression PLUS expression"
     p[0] = ("+", p[1], p[3])
 
-
 def p_expression_binop_minus(p):
     "expression : expression MINUS expression"
     p[0] = ("-", p[1], p[3])
-
 
 def p_expression_binop_times(p):
     "expression : expression TIMES expression"
     p[0] = ("*", p[1], p[3])
 
-
 def p_expression_binop_divide(p):
     "expression : expression DIVIDE expression"
     p[0] = ("/", p[1], p[3])
-
 
 def p_expression_binop_mod(p):
     "expression : expression MOD expression"
     p[0] = ("%", p[1], p[3])
 
-
 def p_expression_binop_inf(p):
     "expression : expression INF expression"
     p[0] = ("<", p[1], p[3])
-
 
 def p_expression_binop_infegal(p):
     "expression : expression INFEG expression"
     p[0] = ("<=", p[1], p[3])
 
-
 def p_expression_binop_sup(p):
     "expression : expression SUP expression"
     p[0] = (">", p[1], p[3])
-
 
 def p_expression_binop_egal(p):
     "expression : expression EGALEGAL expression"
     p[0] = ("==", p[1], p[3])
 
-
 def p_expression_binop_and(p):
     "expression : expression AND expression"
     p[0] = ("&&", p[1], p[3])
-
 
 def p_expression_binop_or(p):
     "expression : expression OR expression"
     p[0] = ("||", p[1], p[3])
 
-
 def p_expression_group(p):
     "expression : LPAREN expression RPAREN"
     p[0] = p[2]
-
 
 def p_expression_number(p):
     "expression : NUMBER"
     p[0] = p[1]
 
-
 def p_expression_name(p):
     "expression : NAME"
     p[0] = p[1]
-
 
 def p_error(p):
     if p:
@@ -307,9 +278,7 @@ def p_error(p):
         print("Erreur de syntaxe à la fin du fichier")
 
 
-# =============================================================================
 # Interpréteur — Évaluation
-# =============================================================================
 
 # Évalue une expression et retourne sa valeur.
 def evalExpr(expression):
@@ -459,30 +428,89 @@ def evalCall(nom, args):
 
 
 # =============================================================================
-# Point d'entrée
-# =============================================================================
-
 lex.lex()
 yacc.yacc()
 
-# s = 'print(1+2/5-2); print(1+2+1);'
-# s = 'if (2+2 <= 4) { print(1); }'
+# Exemples de test
+
+# Test 1 : Simple
 # s = '''
-# for (i=0; i<=10; i=i+1) {
-#     if (i%2 == 0) {
-#         print(i);
-#     };
-# };
+# x = 10;
+# y = 20;
+# print(x + y);
 # '''
-s = '''
-function carre(x) {
-    return x * x;
-};
-ae = carre(5);
-print(ae);
-'''
+
+# Test 2 : Fonction avec paramètres
+# s = '''
+# function carre(x) { return x * x; };
+# res = carre(7);
+# print(res);
+# '''
+
+# Test 3 : Fonction récursive (factorielle)
+# s = '''
+# function fact(n) {
+#     if (n <= 1) {
+#         return 1;
+#     };
+#     return n * fact(n - 1);
+# };
+# print(fact(5));
+# print(fact(10));
+# '''
+
+# Test 4 : Tableaux
+# s = '''
+# tab = [10, 20, 30, 40, 50];
+# print(tab[0]);
+# print(tab[2]);
+# tab[2] = 100;
+# print(tab[2]);
+# '''
+
+# Test 5 : Scope des variables
+# s = '''
+# x = 10;
+# function test(y) {
+#     z = x + y;
+#     return z;
+# };
+# print(test(5));
+# print(z);
+# '''
+
+# Test 5 : POO (Classes et Objets)
+# s = '''
+# class Point {
+#     function constructor(x, y) {
+#         this.x = x;
+#         this.y = y;
+#     }
+#
+#     function afficher() {
+#         print(this.x);
+#         print(this.y);
+#     }
+# }
+#
+# p = new Point(3, 4);
+# p.afficher();
+# '''
+
+# Test 6 : Passage par référence
+# s = '''
+# function modifier(arr) {
+#     arr[0] = 999;
+# };
+# tab = [1, 2, 3];
+# print(tab[0]);
+# modifier(tab);
+# print(tab[0]);
+# '''
 
 
 prog = yacc.parse(s)
-printTreeGraph(prog)
+
+if DISPLAY_TREE:
+    printTreeGraph(prog)
 evalInst(prog)
