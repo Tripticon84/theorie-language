@@ -40,6 +40,7 @@ tokens = [
     "EGALEGAL",
     "INF",
     "INFEG",
+    "SUPEGAL",
     "SUP",
     "AND",
     "OR",
@@ -56,6 +57,9 @@ tokens = [
 # Règles tokens
 
 t_INFEG    = r"\<\="
+t_SUPEGAL  = r"\>\="
+t_INF      = r"\<"
+t_SUP      = r"\>"
 t_EGALEGAL = r"\=\="
 t_PLUS     = r"\+"
 t_MINUS    = r"\-"
@@ -68,8 +72,6 @@ t_LACC     = r"\{"
 t_RACC     = r"\}"
 t_SEMI     = r"\;"
 t_EGAL     = r"\="
-t_INF      = r"\<"
-t_SUP      = r"\>"
 t_AND      = r"\&\&"
 t_OR       = r"\|\|"
 t_COMMA    = r"\,"
@@ -248,6 +250,9 @@ def p_statement_for(p):
     "statement : FOR LPAREN NAME EGAL expression SEMI expression SEMI NAME EGAL expression RPAREN LACC bloc RACC"
     p[0] = ("for", ("assign", p[3], p[5]), p[7], ("assign", p[9], p[11]), p[14])
 
+def p_statement_expr(p):
+    "statement : expression"
+    p[0] = p[1]
 
 # Expressions
 
@@ -282,6 +287,10 @@ def p_expression_binop_inf(p):
 def p_expression_binop_infegal(p):
     "expression : expression INFEG expression"
     p[0] = ("<=", p[1], p[3])
+
+def p_expression_binop_supegal(p):
+    "expression : expression SUPEGAL expression"
+    p[0] = (">=", p[1], p[3])
 
 def p_expression_binop_sup(p):
     "expression : expression SUP expression"
@@ -333,7 +342,7 @@ def evalExpr(expression):
     if isinstance(expression, tuple):
         op = expression[0]
         if op == "call":
-            return evalCall(expression[1], expression[2])
+            return evalCall(expression[1], expression[2]) # Nom de la fonction et arguments
 
         gauche = evalExpr(expression[1])
         droite = evalExpr(expression[2])
@@ -349,17 +358,40 @@ def evalExpr(expression):
         elif op == "%":
             return gauche % droite
         elif op == "<":
-            return gauche < droite
+            if gauche < droite:
+                return 1
+            else:
+                return 0
         elif op == "<=":
-            return gauche <= droite
+            if gauche <= droite:
+                return 1
+            else:
+                return 0
         elif op == ">":
-            return gauche > droite
+            if gauche > droite:
+                return 1
+            else:
+                return 0
+        elif op == ">=":
+            if gauche >= droite:
+                return 1
+            else:
+                return 0
         elif op == "==":
-            return gauche == droite
+            if gauche == droite:
+                return 1
+            else:
+                return 0
         elif op == "&&":
-            return gauche and droite
+            if gauche and droite:
+                return 1
+            else:
+                return 0
         elif op == "||":
-            return gauche or droite
+            if gauche or droite:
+                return 1
+            else:
+                return 0
 
 
 # Évalue une instruction (nœud de l'AST).
@@ -441,7 +473,6 @@ def evalCall(nom, args):
     corps = func_data[1]
     return_expr = func_data[2]
 
-    # Créer un nouveau scope local
     local_scope = {}
 
     for param, arg in zip(params, args):
@@ -468,7 +499,8 @@ def evalCall(nom, args):
 
 
 # =============================================================================
-
+lex.lex()
+yacc.yacc()
 # Tests
 
 # Test 1 : Variables, affectations et expressions
@@ -483,7 +515,7 @@ def evalCall(nom, args):
 # print((a + b) * 2);
 # '''
 
-# Test 2 : Opérateurs arithmétiques et comparaisons
+# Test 2 : Opérateurs arithmétiques
 # s = '''
 # print(5 + 3);
 # print(10 - 2);
@@ -503,9 +535,10 @@ def evalCall(nom, args):
 # print(1 || 0);
 # print(0 || 1);
 # print(1 || 1);
+# print(10 > 3);
+# print(10 >= 10);
 # print(5 < 10);
 # print(5 <= 5);
-# print(10 > 3);
 # '''
 
 # Test 2c : Opérateurs d'affectation (+=, -=, *=, %=)
@@ -520,6 +553,9 @@ def evalCall(nom, args):
 # print(x);
 # x %= 7;
 # print(x);
+# z = 20;
+# print(z--);
+# print(++z);
 # '''
 
 
@@ -554,6 +590,7 @@ def evalCall(nom, args):
 # function carre(x) { return x * x; };
 # function add(a, b) { return a + b; };
 # function saluer() { print(42); };
+
 # res = carre(7);
 # print(res);
 # print(add(3, 4));
@@ -588,7 +625,7 @@ def evalCall(nom, args):
 # print(getter());
 # '''
 
-# Test7b : Portée des variables (variable dans fonction)
+# Test 7b : Portée des variables (variable dans fonction)
 # Erreur attendue : "Variable non définie : z"
 # s = '''
 # x = 100;
@@ -600,55 +637,8 @@ def evalCall(nom, args):
 # print(z);
 # '''
 
-# Test 8 : Raccourcis opérateurs (++, --, +=, -=, *=, %=)
-# s = '''
-# x = 10;
-# print(x);
-# x = x + 5;
-# print(x);
-# x = x - 3;
-# print(x);
-# x = x * 2;
-# print(x);
-# x = 17;
-# x = x % 5;
-# print(x);
-# '''
-
-# ====== TESTS : Fonctionnalités À Implémenter ======
-
-# Test 9 (À implémenter) : Tableaux
-# s = '''
-# tab = [10, 20, 30, 40, 50];
-# print(tab[0]);
-# print(tab[2]);
-# tab[2] = 100;
-# print(tab[2]);
-# '''
-
-# Test 14 (À implémenter) : Types - Chaînes de caractères
-# s = '''
-# message = "Hello";
-# nom = "World";
-# print(message + " " + nom);
-# '''
-
-# Test 17 (À implémenter) : Python-like - Print multiples
-# s = '''
-# print(5, "toto", 10);
-# '''
-
-# Test 18 (À implémenter) : Documentation - Commentaires
-# s = '''
-# # Ceci est un commentaire
-# x = 10;  # Affectation
-# print(x);
-# '''
-
 
 prog = yacc.parse(s)
-lex.lex()
-yacc.yacc()
 
 if DISPLAY_TREE:
     printTreeGraph(prog)

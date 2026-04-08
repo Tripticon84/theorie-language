@@ -1,9 +1,0 @@
-fonction void 
-deux parties :
-- call
-- déclaration
-
-soit un main et fonction
-
-soit comme python : déclaration d'une fonction est un statement
-- print affectation
