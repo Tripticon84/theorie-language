@@ -468,8 +468,6 @@ def evalCall(nom, args):
 
 
 # =============================================================================
-lex.lex()
-yacc.yacc()
 
 # Tests
 
@@ -628,65 +626,11 @@ yacc.yacc()
 # print(tab[2]);
 # '''
 
-# Test 10 (À implémenter) : POO - Classes et Objets
-# s = '''
-# class Point {
-#     function constructor(x, y) {
-#         this.x = x;
-#         this.y = y;
-#     }
-#     function afficher() {
-#         print(this.x);
-#         print(this.y);
-#     }
-# }
-# p = new Point(3, 4);
-# p.afficher();
-# '''
-
-# Test 11 (À implémenter) : Passage par référence
-# s = '''
-# function modifier(arr) {
-#     arr[0] = 999;
-# };
-# tab = [1, 2, 3];
-# print(tab[0]);
-# modifier(tab);
-# print(tab[0]);
-# '''
-
-# Test 12 (À implémenter) : Gestion des erreurs
-# s = '''
-# print(undefined_var);
-# '''
-
-# Test 13 (À implémenter) : Déclaration explicite des variables
-# s = '''
-# int x = 10;
-# string s = "hello";
-# print(x);
-# print(s);
-# '''
-
 # Test 14 (À implémenter) : Types - Chaînes de caractères
 # s = '''
 # message = "Hello";
 # nom = "World";
 # print(message + " " + nom);
-# '''
-
-# Test 15 (À implémenter) : Python-like - Affectations multiples
-# s = '''
-# a, b = 2, 3;
-# print(a);
-# print(b);
-# '''
-
-# Test 16 (À implémenter) : Python-like - Comparaisons multiples
-# s = '''
-# if (1 < 2 < 3) {
-#     print(1);
-# };
 # '''
 
 # Test 17 (À implémenter) : Python-like - Print multiples
@@ -702,9 +646,9 @@ yacc.yacc()
 # '''
 
 
-
-
 prog = yacc.parse(s)
+lex.lex()
+yacc.yacc()
 
 if DISPLAY_TREE:
     printTreeGraph(prog)
